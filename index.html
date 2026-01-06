@@ -191,12 +191,12 @@
           <div class="label"><i class="fas fa-wallet"></i> Total Investment</div>
           <div class="input-group">
             <span class="currency">₹</span>
-            <input type="number" id="mfInvestment" value="390000" onchange="updateMFInvestment(this.value)">
+            <input type="number" id="mfInvestment" value="0" onchange="updateMFInvestment(this.value)">
           </div>
         </div>
         <div class="right" style="text-align:right">
           <div class="current-label">Current Value</div>
-          <div class="current-value" id="mfCurrentValue">₹3,90,000</div>
+          <div class="current-value" id="mfCurrentValue">₹0</div>
           <div class="return profit" id="mfReturn">+₹0 (0.00%)</div>
         </div>
       </div>
@@ -245,7 +245,7 @@
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const fullMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
-    let activeTab = 'stocks', activeMonth = 0, mfInvestment = 390000, data = {}, stockChart, mfChart;
+    let activeTab = 'stocks', activeMonth = 0, mfInvestment = 0, data = {}, stockChart, mfChart;
 
     function initData() {
       months.forEach((m, i) => {
@@ -341,7 +341,7 @@
               }
             });
           }
-          mfInvestment = parsed.mfInvestment || 390000;
+          mfInvestment = parsed.mfInvestment || 0;
           document.getElementById('mfInvestment').value = mfInvestment;
         }
       } catch(e) {}
