@@ -287,32 +287,40 @@
       }
     }
 
-    async function syncToCloud() {
-      updateSyncStatus('syncing', 'Syncing...');
-      
-      const entries = {};
-      months.forEach(m => {
-        data[m].forEach(d => {
-          if (d.stockPL !== null || d.mfInterest !== null) {
-            entries[d.date] = { stockPL: d.stockPL, mfInterest: d.mfInterest };
-          }
-        });
+  async function syncToCloud() {
+    updateSyncStatus('syncing', 'Syncing...');
+    
+    const entries = {};
+    months.forEach(m => {
+      data[m].forEach(d => {
+        if (d.stockPL !== null || d.mfInterest !== null) {
+          entries[d.date] = { stockPL: d.stockPL, mfInterest: d.mfInterest };
+        }
       });
-
-      try {
-        await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          // mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sheet: SHEET_NAME, entries, mfInvestment })
-        });
-        
+    });
+  
+    try {
+      // Use URL parameters instead of POST body to avoid CORS preflight
+      const payload = encodeURIComponent(JSON.stringify({ 
+        sheet: SHEET_NAME, 
+        entries, 
+        mfInvestment 
+      }));
+      
+      const response = await fetch(`${APPS_SCRIPT_URL}?action=save&data=${payload}`);
+      const result = await response.json();
+      
+      if (result.success) {
         saveToLocal();
         updateSyncStatus('synced', 'Synced');
-      } catch (e) {
-        updateSyncStatus('error', 'Sync failed');
+      } else {
+        throw new Error(result.error || 'Save failed');
       }
+    } catch (e) {
+      console.error('Sync error:', e);
+      updateSyncStatus('error', 'Sync failed');
     }
+  }
 
     function updateSyncStatus(status, text) {
       const el = document.getElementById('syncStatus');
