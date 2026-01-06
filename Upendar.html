@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upendar - Investment Tracker 2026</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',system-ui,sans-serif;background:linear-gradient(135deg,#0c0f1a 0%,#1a1f35 50%,#0c0f1a 100%);color:#fff;min-height:100vh}
+    .header{padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;gap:12px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .logo h1{font-size:20px;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .logo p{color:#64748b;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase}
+    .user-badge{background:linear-gradient(135deg,#3b82f6,#2563eb);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600}
+    .header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .sync-status{font-size:12px;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.05)}
+    .sync-status.synced{color:#4ade80}
+    .sync-status.syncing{color:#fbbf24}
+    .sync-status.error{color:#f87171}
+    .btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;transition:all 0.3s}
+    .btn-sync{background:linear-gradient(135deg,#3b82f6,#2563eb);color:white}
+    .btn-sync:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(59,130,246,0.3)}
+    .btn-export{background:linear-gradient(135deg,#059669,#10b981);color:white}
+    .btn-export:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(16,185,129,0.3)}
+    .net-value{text-align:right;padding:10px 16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)}
+    .net-value small{color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+    .net-value .amount{font-size:22px;font-weight:800}
+    .tabs-container{padding:16px 24px 0}
+    .tabs{display:flex;gap:6px}
+    .tab{flex:1;padding:14px 16px;border-radius:12px 12px 0 0;font-weight:600;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.02);color:#64748b;border:1px solid transparent;border-bottom:none;font-size:13px}
+    .tab:hover{background:rgba(255,255,255,0.05);color:#94a3b8}
+    .tab.active-stocks{background:linear-gradient(180deg,rgba(59,130,246,0.15) 0%,rgba(59,130,246,0.05) 100%);color:#60a5fa;border-color:rgba(59,130,246,0.3)}
+    .tab.active-mf{background:linear-gradient(180deg,rgba(147,51,234,0.15) 0%,rgba(147,51,234,0.05) 100%);color:#a78bfa;border-color:rgba(147,51,234,0.3)}
+    .tab i{font-size:16px}
+    .tab-badge{padding:3px 10px;border-radius:15px;font-size:11px;font-weight:700}
+    .badge-profit{background:rgba(34,197,94,0.15);color:#4ade80}
+    .badge-loss{background:rgba(239,68,68,0.15);color:#f87171}
+    .content-wrapper{margin:0 24px 24px;border-radius:0 0 16px 16px;overflow:hidden}
+    .content{padding:20px;display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-top:none}
+    .content.active{display:block}
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+    .stats-row.three{grid-template-columns:repeat(3,1fr)}
+    @media(max-width:768px){.stats-row,.stats-row.three{grid-template-columns:repeat(2,1fr)}}
+    .stat-card{background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.01) 100%);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .stat-card.blue::before{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .stat-card.green::before{background:linear-gradient(90deg,#22c55e,#4ade80)}
+    .stat-card.red::before{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .stat-card.purple::before{background:linear-gradient(90deg,#9333ea,#a855f7)}
+    .stat-card.orange::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .stat-card .icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
+    .stat-card .icon.blue{background:rgba(59,130,246,0.15);color:#60a5fa}
+    .stat-card .icon.green{background:rgba(34,197,94,0.15);color:#4ade80}
+    .stat-card .icon.red{background:rgba(239,68,68,0.15);color:#f87171}
+    .stat-card .icon.purple{background:rgba(147,51,234,0.15);color:#a78bfa}
+    .stat-card .icon.orange{background:rgba(245,158,11,0.15);color:#fbbf24}
+    .stat-card .label{color:#64748b;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+    .stat-card .value{font-size:22px;font-weight:800}
+    .stat-card .value.profit{color:#4ade80}
+    .stat-card .value.loss{color:#f87171}
+    .stat-card .value.blue{color:#60a5fa}
+    .stat-card .value.purple{color:#a78bfa}
+    .stat-card .value.orange{color:#fbbf24}
+    .chart-section{background:rgba(255,255,255,0.02);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-bottom:20px}
+    .chart-section h3{font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .chart-section h3 i{color:#64748b}
+    .month-pills{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+    .month-pill{padding:8px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:rgba(255,255,255,0.04);color:#64748b;transition:all 0.3s;display:flex;align-items:center;gap:4px}
+    .month-pill:hover{background:rgba(255,255,255,0.08);color:#94a3b8}
+    .month-pill.active-stocks{background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;box-shadow:0 4px 15px rgba(59,130,246,0.3)}
+    .month-pill.active-mf{background:linear-gradient(135deg,#9333ea,#7c3aed);color:white;box-shadow:0 4px 15px rgba(147,51,234,0.3)}
+    .month-pill .amount{font-size:10px;opacity:0.9}
+    .data-section{background:rgba(255,255,255,0.02);border-radius:12px;border:1px solid rgba(255,255,255,0.06);overflow:hidden}
+    .data-header{padding:12px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center}
+    .data-header h4{font-size:13px;font-weight:600;color:#e2e8f0;display:flex;align-items:center;gap:8px}
+    .data-header h4 i{color:#64748b}
+    .data-header .total{font-size:14px;font-weight:700}
+    .data-body{padding:12px;max-height:300px;overflow-y:auto}
+    .data-body::-webkit-scrollbar{width:6px}
+    .data-body::-webkit-scrollbar-track{background:rgba(255,255,255,0.02)}
+    .data-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+    .entries-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    @media(max-width:768px){.entries-grid{grid-template-columns:repeat(2,1fr)}}
+    .entry-item{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.04)}
+    .entry-item .date{font-size:10px;color:#64748b;font-weight:500;min-width:40px}
+    .entry-item input{flex:1;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:white;text-align:center;font-size:12px;font-weight:600;transition:all 0.2s;width:60px}
+    .entry-item input:focus{outline:none;border-color:#3b82f6;background:rgba(59,130,246,0.1)}
+    .entry-item input.profit{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.4);color:#4ade80}
+    .entry-item input.loss{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.4);color:#f87171}
+    .entry-item input.mf-profit{background:rgba(147,51,234,0.1);border-color:rgba(147,51,234,0.4);color:#a78bfa}
+    .mf-investment-card{background:linear-gradient(135deg,rgba(147,51,234,0.1) 0%,rgba(88,28,135,0.1) 100%);border-radius:12px;padding:20px;border:1px solid rgba(147,51,234,0.2);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+    .mf-investment-card .label{color:#c4b5fd;font-size:12px;font-weight:500;margin-bottom:6px}
+    .mf-investment-card .input-group{display:flex;align-items:center;gap:6px}
+    .mf-investment-card .currency{color:#a78bfa;font-size:20px;font-weight:600}
+    .mf-investment-card input{background:rgba(255,255,255,0.05);border:1px solid rgba(147,51,234,0.3);border-radius:8px;padding:8px 12px;font-size:20px;font-weight:700;color:white;width:160px}
+    .mf-investment-card input:focus{outline:none;border-color:#a855f7}
+    .mf-investment-card .current-label{color:#c4b5fd;font-size:12px;margin-bottom:4px}
+    .mf-investment-card .current-value{font-size:26px;font-weight:800;color:white}
+    .mf-investment-card .return{font-size:13px;font-weight:600;margin-top:4px}
+    .profit{color:#4ade80}
+    .loss{color:#f87171}
+    .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center}
+    .modal.active{display:flex}
+    .modal-content{background:#1a1f35;border-radius:16px;padding:24px;max-width:400px;width:90%;border:1px solid rgba(255,255,255,0.1)}
+    .modal-content h2{font-size:18px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+    .modal-content h2 i{color:#4ade80}
+    .export-options{display:flex;flex-direction:column;gap:10px}
+    .export-option{padding:14px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:12px}
+    .export-option:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1)}
+    .export-option i{font-size:20px;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+    .export-option.csv i{background:rgba(34,197,94,0.15);color:#4ade80}
+    .export-option.json i{background:rgba(59,130,246,0.15);color:#60a5fa}
+    .export-option .text h4{font-size:14px;font-weight:600;margin-bottom:2px}
+    .export-option .text p{font-size:11px;color:#64748b}
+    .modal-close{margin-top:16px;width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#94a3b8;font-weight:600;cursor:pointer}
+    .modal-close:hover{background:rgba(255,255,255,0.1)}
+    .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(12,15,26,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000}
+    .loading-overlay.hidden{display:none}
+    .spinner{width:50px;height:50px;border:4px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-overlay p{margin-top:16px;color:#94a3b8;font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Loading your data...</p>
+  </div>
+
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
+      <div>
+        <h1>Investment Tracker</h1>
+        <p>Financial Year 2026</p>
+      </div>
+    </div>
+    <span class="user-badge"><i class="fas fa-user"></i> Upendar</span>
+    <div class="header-actions">
+      <span class="sync-status synced" id="syncStatus"><i class="fas fa-cloud"></i> Synced</span>
+      <button class="btn btn-sync" onclick="syncToCloud()"><i class="fas fa-sync-alt"></i> Sync</button>
+      <button class="btn btn-export" onclick="openExportModal()"><i class="fas fa-download"></i> Export</button>
+      <div class="net-value">
+        <small>Net P/L</small>
+        <div class="amount profit" id="netPortfolio">₹0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs-container">
+    <div class="tabs">
+      <div class="tab active-stocks" id="stocksTab" onclick="switchTab('stocks')">
+        <i class="fas fa-chart-bar"></i>
+        <span>STOCKS</span>
+        <span class="tab-badge badge-profit" id="stocksBadge">₹0</span>
+      </div>
+      <div class="tab" id="mfTab" onclick="switchTab('mf')">
+        <i class="fas fa-piggy-bank"></i>
+        <span>MUTUAL FUNDS</span>
+        <span class="tab-badge badge-profit" id="mfBadge">₹0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+    <div class="content active" id="stocksContent">
+      <div class="stats-row" id="stockStats"></div>
+      <div class="chart-section">
+        <h3><i class="fas fa-chart-area"></i> Monthly Performance</h3>
+        <canvas id="stockChart" height="130"></canvas>
+      </div>
+      <div class="month-pills" id="stockMonthPills"></div>
+      <div class="data-section">
+        <div class="data-header">
+          <h4><i class="fas fa-calendar-alt"></i> <span id="stockTableTitle">January 2026</span></h4>
+          <span class="total profit" id="stockMonthTotal">₹0</span>
+        </div>
+        <div class="data-body">
+          <div class="entries-grid" id="stockEntries"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content" id="mfContent">
+      <div class="mf-investment-card">
+        <div class="left">
+          <div class="label"><i class="fas fa-wallet"></i> Total Investment</div>
+          <div class="input-group">
+            <span class="currency">₹</span>
+            <input type="number" id="mfInvestment" value="390000" onchange="updateMFInvestment(this.value)">
+          </div>
+        </div>
+        <div class="right" style="text-align:right">
+          <div class="current-label">Current Value</div>
+          <div class="current-value" id="mfCurrentValue">₹3,90,000</div>
+          <div class="return profit" id="mfReturn">+₹0 (0.00%)</div>
+        </div>
+      </div>
+      <div class="stats-row three" id="mfStats"></div>
+      <div class="chart-section">
+        <h3><i class="fas fa-chart-line"></i> Monthly Interest</h3>
+        <canvas id="mfChart" height="130"></canvas>
+      </div>
+      <div class="month-pills" id="mfMonthPills"></div>
+      <div class="data-section">
+        <div class="data-header">
+          <h4><i class="fas fa-calendar-alt"></i> <span id="mfTableTitle">January 2026</span></h4>
+          <span class="total profit" id="mfMonthTotal">₹0</span>
+        </div>
+        <div class="data-body">
+          <div class="entries-grid" id="mfEntries"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="exportModal">
+    <div class="modal-content">
+      <h2><i class="fas fa-download"></i> Export Data</h2>
+      <div class="export-options">
+        <div class="export-option csv" onclick="exportCSV()">
+          <i class="fas fa-file-csv"></i>
+          <div class="text"><h4>Export CSV</h4><p>Excel compatible</p></div>
+        </div>
+        <div class="export-option json" onclick="exportJSON()">
+          <i class="fas fa-file-code"></i>
+          <div class="text"><h4>Export JSON</h4><p>Full backup</p></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeExportModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // ========== CONFIGURATION ==========
+    const USER_NAME = 'Upendar';
+    const SHEET_NAME = 'Upendar';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhVGbq24b4NqS9rB7EHTE2ZMHhJYF9vXejqaD7Iw46H-ASL3U47jLK25TRsG9cP5WN3w/exec'; // Replace after deploying Apps Script
+    
+    // ========== DATA ==========
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fullMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const daysInMonth = [31,29,31,30,31,30,31,31,30,31,30,31];
+    let activeTab = 'stocks', activeMonth = 0, mfInvestment = 390000, data = {}, stockChart, mfChart;
+
+    function initData() {
+      months.forEach((m, i) => {
+        data[m] = Array.from({length: daysInMonth[i]}, (_, d) => ({
+          day: d + 1, date: `${String(d+1).padStart(2,'0')}-${m}`, stockPL: null, mfInterest: null
+        }));
+      });
+    }
+
+    // ========== CLOUD SYNC ==========
+    async function loadFromCloud() {
+      try {
+        const response = await fetch(`${APPS_SCRIPT_URL}?sheet=${SHEET_NAME}`);
+        const cloudData = await response.json();
+        
+        if (cloudData.entries) {
+          Object.keys(cloudData.entries).forEach(dateKey => {
+            const [day, month] = dateKey.split('-');
+            if (data[month]) {
+              const dayIndex = parseInt(day) - 1;
+              if (data[month][dayIndex]) {
+                data[month][dayIndex].stockPL = cloudData.entries[dateKey].stockPL;
+                data[month][dayIndex].mfInterest = cloudData.entries[dateKey].mfInterest;
+              }
+            }
+          });
+        }
+        
+        if (cloudData.mfInvestment) {
+          mfInvestment = cloudData.mfInvestment;
+          document.getElementById('mfInvestment').value = mfInvestment;
+        }
+        
+        updateSyncStatus('synced', 'Synced');
+      } catch (e) {
+        console.log('Cloud load failed, using local data');
+        loadFromLocal();
+        updateSyncStatus('error', 'Offline');
+      }
+    }
+
+    async function syncToCloud() {
+      updateSyncStatus('syncing', 'Syncing...');
+      
+      const entries = {};
+      months.forEach(m => {
+        data[m].forEach(d => {
+          if (d.stockPL !== null || d.mfInterest !== null) {
+            entries[d.date] = { stockPL: d.stockPL, mfInterest: d.mfInterest };
+          }
+        });
+      });
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheet: SHEET_NAME, entries, mfInvestment })
+        });
+        
+        saveToLocal();
+        updateSyncStatus('synced', 'Synced');
+      } catch (e) {
+        updateSyncStatus('error', 'Sync failed');
+      }
+    }
+
+    function updateSyncStatus(status, text) {
+      const el = document.getElementById('syncStatus');
+      el.className = 'sync-status ' + status;
+      el.innerHTML = `<i class="fas fa-${status === 'synced' ? 'cloud' : status === 'syncing' ? 'sync-alt fa-spin' : 'exclamation-triangle'}"></i> ${text}`;
+    }
+
+    function saveToLocal() {
+      localStorage.setItem('investmentTracker_' + USER_NAME, JSON.stringify({ data, mfInvestment }));
+    }
+
+    function loadFromLocal() {
+      try {
+        const saved = localStorage.getItem('investmentTracker_' + USER_NAME);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.data) {
+            months.forEach(m => {
+              if (parsed.data[m]) {
+                parsed.data[m].forEach((d, i) => {
+                  if (data[m][i]) {
+                    data[m][i].stockPL = d.stockPL;
+                    data[m][i].mfInterest = d.mfInterest;
+                  }
+                });
+              }
+            });
+          }
+          mfInvestment = parsed.mfInvestment || 390000;
+          document.getElementById('mfInvestment').value = mfInvestment;
+        }
+      } catch(e) {}
+    }
+
+    // ========== FORMATTING ==========
+    function formatCurrency(val, short = true) {
+      if (val === null || val === undefined) return '';
+      const abs = Math.abs(val);
+      let str;
+      if (short) {
+        if (abs >= 10000000) str = (abs/10000000).toFixed(2) + 'Cr';
+        else if (abs >= 100000) str = (abs/100000).toFixed(2) + 'L';
+        else if (abs >= 1000) str = (abs/1000).toFixed(1) + 'K';
+        else str = abs.toLocaleString('en-IN');
+      } else {
+        str = abs.toLocaleString('en-IN');
+      }
+      return (val < 0 ? '-₹' : '₹') + str;
+    }
+
+    function getStats() {
+      return months.map(m => {
+        const stockTotal = data[m].reduce((s, d) => s + (d.stockPL || 0), 0);
+        const mfTotal = data[m].reduce((s, d) => s + (d.mfInterest || 0), 0);
+        const tradingDays = data[m].filter(d => d.stockPL !== null).length;
+        const profitDays = data[m].filter(d => d.stockPL > 0).length;
+        const lossDays = data[m].filter(d => d.stockPL < 0).length;
+        return { month: m, stockTotal, mfTotal, tradingDays, profitDays, lossDays };
+      });
+    }
+
+    // ========== UI UPDATE ==========
+    function updateUI() {
+      const stats = getStats();
+      const yearStock = stats.reduce((s, m) => s + m.stockTotal, 0);
+      const yearMF = stats.reduce((s, m) => s + m.mfTotal, 0);
+      const netTotal = yearStock + yearMF;
+      const totalTradingDays = stats.reduce((s, m) => s + m.tradingDays, 0);
+      const totalProfitDays = stats.reduce((s, m) => s + m.profitDays, 0);
+      const totalLossDays = stats.reduce((s, m) => s + m.lossDays, 0);
+
+      document.getElementById('netPortfolio').textContent = formatCurrency(netTotal);
+      document.getElementById('netPortfolio').className = 'amount ' + (netTotal >= 0 ? 'profit' : 'loss');
+
+      const stocksBadge = document.getElementById('stocksBadge');
+      stocksBadge.textContent = formatCurrency(yearStock);
+      stocksBadge.className = 'tab-badge ' + (yearStock >= 0 ? 'badge-profit' : 'badge-loss');
+
+      const mfBadge = document.getElementById('mfBadge');
+      mfBadge.textContent = formatCurrency(yearMF);
+      mfBadge.className = 'tab-badge ' + (yearMF >= 0 ? 'badge-profit' : 'badge-loss');
+
+      document.getElementById('stockStats').innerHTML = `
+        <div class="stat-card ${yearStock >= 0 ? 'green' : 'red'}"><div class="icon ${yearStock >= 0 ? 'green' : 'red'}"><i class="fas fa-${yearStock >= 0 ? 'arrow-trend-up' : 'arrow-trend-down'}"></i></div><div class="label">Total P/L</div><div class="value ${yearStock >= 0 ? 'profit' : 'loss'}">${formatCurrency(yearStock)}</div></div>
+        <div class="stat-card blue"><div class="icon blue"><i class="fas fa-calendar-check"></i></div><div class="label">Trading Days</div><div class="value blue">${totalTradingDays}</div></div>
+        <div class="stat-card green"><div class="icon green"><i class="fas fa-smile"></i></div><div class="label">Winning</div><div class="value profit">${totalProfitDays}</div></div>
+        <div class="stat-card red"><div class="icon red"><i class="fas fa-frown"></i></div><div class="label">Losing</div><div class="value loss">${totalLossDays}</div></div>
+      `;
+
+      const mfCurrentVal = mfInvestment + yearMF;
+      const mfReturnPct = ((yearMF / mfInvestment) * 100).toFixed(2);
+      document.getElementById('mfCurrentValue').textContent = formatCurrency(mfCurrentVal, false);
+      document.getElementById('mfReturn').textContent = `${yearMF >= 0 ? '+' : ''}${formatCurrency(yearMF)} (${mfReturnPct}%)`;
+      document.getElementById('mfReturn').className = 'return ' + (yearMF >= 0 ? 'profit' : 'loss');
+
+      document.getElementById('mfStats').innerHTML = `
+        <div class="stat-card ${yearMF >= 0 ? 'green' : 'red'}"><div class="icon ${yearMF >= 0 ? 'green' : 'red'}"><i class="fas fa-coins"></i></div><div class="label">Total Interest</div><div class="value ${yearMF >= 0 ? 'profit' : 'loss'}">${formatCurrency(yearMF)}</div></div>
+        <div class="stat-card purple"><div class="icon purple"><i class="fas fa-percent"></i></div><div class="label">Returns</div><div class="value purple">${mfReturnPct}%</div></div>
+        <div class="stat-card orange"><div class="icon orange"><i class="fas fa-calculator"></i></div><div class="label">Avg Monthly</div><div class="value orange">${formatCurrency(yearMF / 12)}</div></div>
+      `;
+
+      updateCharts(stats);
+      updateMonthPills(stats);
+      updateEntries();
+    }
+
+    function updateStockOnly() {
+      const stats = getStats();
+      const yearStock = stats.reduce((s, m) => s + m.stockTotal, 0);
+      const yearMF = stats.reduce((s, m) => s + m.mfTotal, 0);
+      const netTotal = yearStock + yearMF;
+      const totalTradingDays = stats.reduce((s, m) => s + m.tradingDays, 0);
+      const totalProfitDays = stats.reduce((s, m) => s + m.profitDays, 0);
+      const totalLossDays = stats.reduce((s, m) => s + m.lossDays, 0);
+
+      document.getElementById('netPortfolio').textContent = formatCurrency(netTotal);
+      document.getElementById('netPortfolio').className = 'amount ' + (netTotal >= 0 ? 'profit' : 'loss');
+      
+      const stocksBadge = document.getElementById('stocksBadge');
+      stocksBadge.textContent = formatCurrency(yearStock);
+      stocksBadge.className = 'tab-badge ' + (yearStock >= 0 ? 'badge-profit' : 'badge-loss');
+
+      document.getElementById('stockStats').innerHTML = `
+        <div class="stat-card ${yearStock >= 0 ? 'green' : 'red'}"><div class="icon ${yearStock >= 0 ? 'green' : 'red'}"><i class="fas fa-${yearStock >= 0 ? 'arrow-trend-up' : 'arrow-trend-down'}"></i></div><div class="label">Total P/L</div><div class="value ${yearStock >= 0 ? 'profit' : 'loss'}">${formatCurrency(yearStock)}</div></div>
+        <div class="stat-card blue"><div class="icon blue"><i class="fas fa-calendar-check"></i></div><div class="label">Trading Days</div><div class="value blue">${totalTradingDays}</div></div>
+        <div class="stat-card green"><div class="icon green"><i class="fas fa-smile"></i></div><div class="label">Winning</div><div class="value profit">${totalProfitDays}</div></div>
+        <div class="stat-card red"><div class="icon red"><i class="fas fa-frown"></i></div><div class="label">Losing</div><div class="value loss">${totalLossDays}</div></div>
+      `;
+
+      const monthStats = stats[activeMonth];
+      document.getElementById('stockMonthTotal').textContent = formatCurrency(monthStats.stockTotal);
+      document.getElementById('stockMonthTotal').className = 'total ' + (monthStats.stockTotal >= 0 ? 'profit' : 'loss');
+
+      if (stockChart) stockChart.destroy();
+      const stockData = stats.map(s => s.stockTotal);
+      const stockColors = stockData.map(v => v >= 0 ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.8)');
+      stockChart = new Chart(document.getElementById('stockChart'), {
+        type: 'bar', data: { labels: months, datasets: [{ data: stockData, backgroundColor: stockColors, borderRadius: 6, borderSkipped: false }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } } } }
+      });
+
+      document.getElementById('stockMonthPills').innerHTML = months.map((m, i) => 
+        `<button class="month-pill ${activeMonth === i ? 'active-stocks' : ''}" onclick="setMonth(${i})">${m} ${stats[i].stockTotal !== 0 ? `<span class="amount">${formatCurrency(stats[i].stockTotal)}</span>` : ''}</button>`
+      ).join('');
+
+      const m = months[activeMonth];
+      const inputs = document.querySelectorAll('#stockEntries .entry-item input');
+      inputs.forEach((input, i) => {
+        const val = data[m][i].stockPL;
+        input.className = val === null ? '' : val > 0 ? 'profit' : val < 0 ? 'loss' : '';
+      });
+    }
+
+    function updateCharts(stats) {
+      const stockData = stats.map(s => s.stockTotal);
+      const mfData = stats.map(s => s.mfTotal);
+      const stockColors = stockData.map(v => v >= 0 ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.8)');
+      const mfColors = mfData.map(v => v >= 0 ? 'rgba(147,51,234,0.8)' : 'rgba(239,68,68,0.8)');
+
+      if (stockChart) stockChart.destroy();
+      if (mfChart) mfChart.destroy();
+
+      const opts = { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } } } };
+
+      stockChart = new Chart(document.getElementById('stockChart'), { type: 'bar', data: { labels: months, datasets: [{ data: stockData, backgroundColor: stockColors, borderRadius: 6, borderSkipped: false }] }, options: opts });
+      mfChart = new Chart(document.getElementById('mfChart'), { type: 'bar', data: { labels: months, datasets: [{ data: mfData, backgroundColor: mfColors, borderRadius: 6, borderSkipped: false }] }, options: opts });
+    }
+
+    function updateMonthPills(stats) {
+      document.getElementById('stockMonthPills').innerHTML = months.map((m, i) => `<button class="month-pill ${activeMonth === i ? 'active-stocks' : ''}" onclick="setMonth(${i})">${m} ${stats[i].stockTotal !== 0 ? `<span class="amount">${formatCurrency(stats[i].stockTotal)}</span>` : ''}</button>`).join('');
+      document.getElementById('mfMonthPills').innerHTML = months.map((m, i) => `<button class="month-pill ${activeMonth === i ? 'active-mf' : ''}" onclick="setMonth(${i})">${m} ${stats[i].mfTotal !== 0 ? `<span class="amount">${formatCurrency(stats[i].mfTotal)}</span>` : ''}</button>`).join('');
+    }
+
+    function updateEntries() {
+      const m = months[activeMonth];
+      const monthData = data[m];
+      const stats = getStats()[activeMonth];
+
+      document.getElementById('stockTableTitle').textContent = `${fullMonths[activeMonth]} 2026`;
+      document.getElementById('stockMonthTotal').textContent = formatCurrency(stats.stockTotal);
+      document.getElementById('stockMonthTotal').className = 'total ' + (stats.stockTotal >= 0 ? 'profit' : 'loss');
+
+      document.getElementById('mfTableTitle').textContent = `${fullMonths[activeMonth]} 2026`;
+      document.getElementById('mfMonthTotal').textContent = formatCurrency(stats.mfTotal);
+      document.getElementById('mfMonthTotal').className = 'total ' + (stats.mfTotal >= 0 ? 'profit' : 'loss');
+
+      document.getElementById('stockEntries').innerHTML = monthData.map((d, i) => {
+        const cls = d.stockPL === null ? '' : d.stockPL > 0 ? 'profit' : d.stockPL < 0 ? 'loss' : '';
+        return `<div class="entry-item"><span class="date">${d.date}</span><input type="number" class="${cls}" value="${d.stockPL === null ? '' : d.stockPL}" onchange="updateStock(${i}, this.value)" placeholder="0"></div>`;
+      }).join('');
+
+      document.getElementById('mfEntries').innerHTML = monthData.map((d, i) => {
+        const cls = d.mfInterest === null ? '' : d.mfInterest > 0 ? 'mf-profit' : d.mfInterest < 0 ? 'loss' : '';
+        return `<div class="entry-item"><span class="date">${d.date}</span><input type="number" class="${cls}" value="${d.mfInterest === null ? '' : d.mfInterest}" onchange="updateMF(${i}, this.value)" placeholder="0"></div>`;
+      }).join('');
+    }
+
+    // ========== ACTIONS ==========
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById('stocksTab').className = tab === 'stocks' ? 'tab active-stocks' : 'tab';
+      document.getElementById('mfTab').className = tab === 'mf' ? 'tab active-mf' : 'tab';
+      document.getElementById('stocksContent').className = tab === 'stocks' ? 'content active' : 'content';
+      document.getElementById('mfContent').className = tab === 'mf' ? 'content active' : 'content';
+    }
+
+    function setMonth(i) { activeMonth = i; updateUI(); }
+    
+    function updateStock(idx, val) { 
+      data[months[activeMonth]][idx].stockPL = val === '' ? null : Number(val); 
+      saveToLocal();
+      updateStockOnly();
+    }
+    
+    function updateMF(idx, val) { 
+      data[months[activeMonth]][idx].mfInterest = val === '' ? null : Number(val); 
+      saveToLocal();
+      const stats = getStats();
+      const yearMF = stats.reduce((s, m) => s + m.mfTotal, 0);
+      const mfBadge = document.getElementById('mfBadge');
+      mfBadge.textContent = formatCurrency(yearMF);
+      mfBadge.className = 'tab-badge ' + (yearMF >= 0 ? 'badge-profit' : 'badge-loss');
+      const mfCurrentVal = mfInvestment + yearMF;
+      const mfReturnPct = ((yearMF / mfInvestment) * 100).toFixed(2);
+      document.getElementById('mfCurrentValue').textContent = formatCurrency(mfCurrentVal, false);
+      document.getElementById('mfReturn').textContent = `${yearMF >= 0 ? '+' : ''}${formatCurrency(yearMF)} (${mfReturnPct}%)`;
+      document.getElementById('mfReturn').className = 'return ' + (yearMF >= 0 ? 'profit' : 'loss');
+      document.getElementById('mfStats').innerHTML = `
+        <div class="stat-card ${yearMF >= 0 ? 'green' : 'red'}"><div class="icon ${yearMF >= 0 ? 'green' : 'red'}"><i class="fas fa-coins"></i></div><div class="label">Total Interest</div><div class="value ${yearMF >= 0 ? 'profit' : 'loss'}">${formatCurrency(yearMF)}</div></div>
+        <div class="stat-card purple"><div class="icon purple"><i class="fas fa-percent"></i></div><div class="label">Returns</div><div class="value purple">${mfReturnPct}%</div></div>
+        <div class="stat-card orange"><div class="icon orange"><i class="fas fa-calculator"></i></div><div class="label">Avg Monthly</div><div class="value orange">${formatCurrency(yearMF / 12)}</div></div>
+      `;
+      document.getElementById('mfMonthTotal').textContent = formatCurrency(stats[activeMonth].mfTotal);
+      document.getElementById('mfMonthTotal').className = 'total ' + (stats[activeMonth].mfTotal >= 0 ? 'profit' : 'loss');
+      const m = months[activeMonth];
+      const inputs = document.querySelectorAll('#mfEntries .entry-item input');
+      inputs.forEach((input, i) => {
+        const v = data[m][i].mfInterest;
+        input.className = v === null ? '' : v > 0 ? 'mf-profit' : v < 0 ? 'loss' : '';
+      });
+      if (mfChart) mfChart.destroy();
+      const mfData = stats.map(s => s.mfTotal);
+      const mfColors = mfData.map(v => v >= 0 ? 'rgba(147,51,234,0.8)' : 'rgba(239,68,68,0.8)');
+      mfChart = new Chart(document.getElementById('mfChart'), { type: 'bar', data: { labels: months, datasets: [{ data: mfData, backgroundColor: mfColors, borderRadius: 6, borderSkipped: false }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }, x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } } } } });
+      document.getElementById('mfMonthPills').innerHTML = months.map((m, i) => `<button class="month-pill ${activeMonth === i ? 'active-mf' : ''}" onclick="setMonth(${i})">${m} ${stats[i].mfTotal !== 0 ? `<span class="amount">${formatCurrency(stats[i].mfTotal)}</span>` : ''}</button>`).join('');
+      const netTotal = stats.reduce((s, m) => s + m.stockTotal, 0) + yearMF;
+      document.getElementById('netPortfolio').textContent = formatCurrency(netTotal);
+      document.getElementById('netPortfolio').className = 'amount ' + (netTotal >= 0 ? 'profit' : 'loss');
+    }
+    
+    function updateMFInvestment(val) { mfInvestment = Number(val) || 0; saveToLocal(); updateUI(); }
+
+    function openExportModal() { document.getElementById('exportModal').classList.add('active'); }
+    function closeExportModal() { document.getElementById('exportModal').classList.remove('active'); }
+
+    function exportCSV() {
+      let csv = 'Date,Stock P/L,MF Interest,Daily Total\n';
+      months.forEach(m => { data[m].forEach(d => { const total = (d.stockPL || 0) + (d.mfInterest || 0); csv += `${d.date}-2026,${d.stockPL || ''},${d.mfInterest || ''},${total || ''}\n`; }); });
+      csv += `\nMF Investment,${mfInvestment}\n\nMonth,Stock P/L,MF Interest,Total\n`;
+      getStats().forEach(s => csv += `${s.month},${s.stockTotal},${s.mfTotal},${s.stockTotal + s.mfTotal}\n`);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${USER_NAME}_Investment_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+      closeExportModal();
+    }
+
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify({ data, mfInvestment, user: USER_NAME, exportDate: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${USER_NAME}_Backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
+      closeExportModal();
+    }
+
+    // ========== INIT ==========
+    async function init() {
+      initData();
+      loadFromLocal();
+      await loadFromCloud();
+      updateUI();
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    init();
+  </script>
+</body>
+</html>
