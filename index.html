@@ -302,7 +302,7 @@
       try {
         await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors',
+          // mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sheet: SHEET_NAME, entries, mfInvestment })
         });
